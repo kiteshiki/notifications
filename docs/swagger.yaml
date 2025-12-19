@@ -1,0 +1,280 @@
+basePath: /
+definitions:
+  models.CreateAPIKeyRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateAPIKeyResponse:
+    properties:
+      created_at:
+        type: string
+      key:
+        type: string
+      name:
+        type: string
+    type: object
+  models.LogStats:
+    properties:
+      average_response_time_ms:
+        type: number
+      status_codes:
+        additionalProperties:
+          format: int64
+          type: integer
+        type: object
+      top_methods:
+        items:
+          $ref: '#/definitions/models.MethodCount'
+        type: array
+      top_paths:
+        items:
+          $ref: '#/definitions/models.PathCount'
+        type: array
+      total_requests:
+        type: integer
+    type: object
+  models.MethodCount:
+    properties:
+      count:
+        type: integer
+      method:
+        type: string
+    type: object
+  models.PathCount:
+    properties:
+      count:
+        type: integer
+      path:
+        type: string
+    type: object
+  transport.HelloResponse:
+    properties:
+      message:
+        example: Hello, World!
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Simple API built with Gin and Swagger.
+  title: Notifications API
+  version: "1.0"
+paths:
+  /api-keys:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new API key with the provided name. Requires master API
+        key as query parameter 'api'.
+      parameters:
+      - description: Master API Key
+        in: query
+        name: api
+        required: true
+        type: string
+      - description: API Key Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateAPIKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateAPIKeyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate a new API key
+      tags:
+      - api-keys
+  /auth:
+    get:
+      description: HTML page for entering API key
+      produces:
+      - text/html
+      responses: {}
+      summary: Authentication page
+      tags:
+      - auth
+  /auth/clear:
+    post:
+      description: Removes the API key cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Clear API key cookie
+      tags:
+      - auth
+  /auth/set:
+    post:
+      consumes:
+      - application/json
+      description: Stores the provided API key in a secure cookie
+      parameters:
+      - description: API Key
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Set API key cookie
+      tags:
+      - auth
+  /dashboard:
+    get:
+      description: Serve the dashboard HTML page. Requires authentication via cookie
+        or query parameter.
+      produces:
+      - text/html
+      responses: {}
+      summary: Dashboard HTML page
+      tags:
+      - dashboard
+  /dashboard/logs:
+    get:
+      description: Retrieve paginated request logs with optional filters
+      parameters:
+      - description: Limit (max 1000)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by HTTP method
+        in: query
+        name: method
+        type: string
+      - description: Filter by status code
+        in: query
+        name: status_code
+        type: integer
+      - description: Filter by path (partial match)
+        in: query
+        name: path
+        type: string
+      - description: Start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get request logs
+      tags:
+      - dashboard
+  /dashboard/stats:
+    get:
+      description: Get aggregated statistics about request logs
+      parameters:
+      - description: Start date (RFC3339)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (RFC3339)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LogStats'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get log statistics
+      tags:
+      - dashboard
+  /hello:
+    get:
+      description: Returns a greeting message. Requires API key as query parameter
+        'api'.
+      parameters:
+      - description: API Key
+        in: query
+        name: api
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/transport.HelloResponse'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Hello endpoint
+      tags:
+      - hello
+schemes:
+- http
+swagger: "2.0"
